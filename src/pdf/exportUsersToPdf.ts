@@ -51,8 +51,10 @@ export async function exportUsersToPdf(
         console.log("Export PDF:", { users, columns })
 
         const doc = new jsPDF()
+        const base = import.meta.env.BASE_URL
 
-        const fontBase64 = await loadFontBase64("/fonts/DejaVuSans.ttf")
+
+        const fontBase64 = await loadFontBase64(`${base}fonts/DejaVuSans.ttf`)
         doc.addFileToVFS("DejaVuSans.ttf", fontBase64)
         doc.addFont("DejaVuSans.ttf", "DejaVuSans", "normal")
         doc.addFont("DejaVuSans.ttf", "DejaVuSans", "bold")
@@ -61,7 +63,7 @@ export async function exportUsersToPdf(
         const title = "Отчёт по пользователям"
         const date = new Date().toLocaleDateString()
 
-        const logoBase64 = await loadImageBase64("/logoAmir.png")
+        const logoBase64 = await loadImageBase64(`${base}logoAmir.png`)
 
         if (logoBase64) {
             doc.addImage(logoBase64, "PNG", 14, 10, 20, 20)
