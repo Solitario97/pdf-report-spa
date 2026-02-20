@@ -11,6 +11,17 @@ const COLUMN_LABELS: Record<PdfColumnKey, string> = {
     company: "Компания",
 }
 
+async function loadBinary(url: string): Promise<string> {
+    const res = await fetch(url)
+    const buffer = await res.arrayBuffer()
+    let binary = ""
+    const bytes = new Uint8Array(buffer)
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i])
+    }
+    return btoa(binary)
+}
+
 async function loadImageBase64(url: string): Promise<string | null> {
     try {
         const res = await fetch(url)
@@ -27,29 +38,14 @@ async function loadImageBase64(url: string): Promise<string | null> {
     }
 }
 
-async function loadFontBase64(url: string): Promise<string> {
-    const res = await fetch(url)
-    const blob = await res.blob()
-
-    return await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-            const result = reader.result as string
-            const base64 = result.split(",")[1] // убираем data:...
-            resolve(base64)
-        }
-        reader.onerror = reject
-        reader.readAsDataURL(blob)
-    })
-}
-
 export async function exportUsersToPdf(users: User[], columns: PdfColumnKey[]) {
     try {
         const doc = new jsPDF()
         const base = import.meta.env.BASE_URL
 
-        const fontBase64 = await loadFontBase64(`${base}fonts/DejaVuSans.ttf`)
-        doc.addFileToVFS("DejaVuSans.ttf", fontBase64)
+        // ⬇️ ПРАВИЛЬНАЯ загрузка шрифта
+        const fontBinary = await loadBinary(`${base}fonts/DejaVuSans.ttf`)
+        doc.addFileToVFS("DejaVuSans.ttf", fontBinary)
         doc.addFont("DejaVuSans.ttf", "DejaVuSans", "normal")
         doc.setFont("DejaVuSans", "normal")
 
@@ -71,18 +67,13 @@ export async function exportUsersToPdf(users: User[], columns: PdfColumnKey[]) {
         doc.line(14, 32, 196, 32)
 
         const head = [columns.map(c => COLUMN_LABELS[c])]
-
         const body = users.map(u =>
             columns.map(c => {
                 switch (c) {
-                    case "name":
-                        return u.name
-                    case "email":
-                        return u.email
-                    case "phone":
-                        return u.phone
-                    case "company":
-                        return u.company.name
+                    case "name": return u.name
+                    case "email": return u.email
+                    case "phone": return u.phone
+                    case "company": return u.company.name
                 }
             })
         )
@@ -91,8 +82,16 @@ export async function exportUsersToPdf(users: User[], columns: PdfColumnKey[]) {
             startY: 38,
             head,
             body,
-            styles: { font: "DejaVuSans", fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [99, 102, 241], textColor: 255, font: "DejaVuSans" },
+            styles: {
+                font: "DejaVuSans",
+                fontSize: 9,
+                cellPadding: 3,
+            },
+            headStyles: {
+                fillColor: [99, 102, 241],
+                textColor: 255,
+                font: "DejaVuSans",
+            },
             alternateRowStyles: { fillColor: [245, 247, 250] },
             margin: { left: 14, right: 14 },
         })
