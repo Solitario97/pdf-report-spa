@@ -1,0 +1,134 @@
+:root {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #6366f1;
+  --error-bg: #fee2e2;
+  --error-text: #991b1b;
+  --info-bg: #f3f4f6;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card: #020617;
+  --border: #1e293b;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #818cf8;
+  --error-bg: #3f1d1d;
+  --error-text: #fca5a5;
+  --info-bg: #111827;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+}
+
+.app-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.app-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.search-input {
+  min-width: 260px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.state-info {
+  margin-top: 24px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--info-bg);
+  color: var(--text);
+}
+
+.state-error {
+  margin-top: 24px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.api-controls {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 20px;
+}
+
+.api-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--text);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.api-button {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent-color);
+  color: var(--text);
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.api-button:hover {
+  opacity: 0.9;
+}
