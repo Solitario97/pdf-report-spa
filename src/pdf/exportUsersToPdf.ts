@@ -35,7 +35,7 @@ async function loadFontBase64(url: string): Promise<string> {
         const reader = new FileReader()
         reader.onload = () => {
             const result = reader.result as string
-            const base64 = result.split(",")[1] // 🔴 ВАЖНО: убираем data:...,
+            const base64 = result.split(",")[1] // убираем data:...
             resolve(base64)
         }
         reader.onerror = reject
@@ -43,28 +43,20 @@ async function loadFontBase64(url: string): Promise<string> {
     })
 }
 
-export async function exportUsersToPdf(
-    users: User[],
-    columns: PdfColumnKey[]
-) {
+export async function exportUsersToPdf(users: User[], columns: PdfColumnKey[]) {
     try {
-        console.log("Export PDF:", { users, columns })
-
         const doc = new jsPDF()
         const base = import.meta.env.BASE_URL
-
 
         const fontBase64 = await loadFontBase64(`${base}fonts/DejaVuSans.ttf`)
         doc.addFileToVFS("DejaVuSans.ttf", fontBase64)
         doc.addFont("DejaVuSans.ttf", "DejaVuSans", "normal")
-        doc.addFont("DejaVuSans.ttf", "DejaVuSans", "bold")
         doc.setFont("DejaVuSans", "normal")
 
         const title = "Отчёт по пользователям"
         const date = new Date().toLocaleDateString()
 
         const logoBase64 = await loadImageBase64(`${base}logoAmir.png`)
-
         if (logoBase64) {
             doc.addImage(logoBase64, "PNG", 14, 10, 20, 20)
         }
@@ -99,16 +91,10 @@ export async function exportUsersToPdf(
             startY: 38,
             head,
             body,
-            styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: {
-                fillColor: [99, 102, 241],
-                textColor: 255,
-            },
+            styles: { font: "DejaVuSans", fontSize: 9, cellPadding: 3 },
+            headStyles: { fillColor: [99, 102, 241], textColor: 255, font: "DejaVuSans" },
             alternateRowStyles: { fillColor: [245, 247, 250] },
             margin: { left: 14, right: 14 },
-            didParseCell: (data) => {
-                data.cell.styles.font = "DejaVuSans"
-            },
         })
 
         doc.save(`users-report-${new Date().toISOString().slice(0, 10)}.pdf`)
