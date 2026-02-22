@@ -12,45 +12,64 @@ const COLUMN_LABELS: Record<PdfColumnKey, string> = {
 }
 
 async function loadBinary(url: string): Promise<string> {
-    const res = await fetch(url)
-    const buffer = await res.arrayBuffer()
+    const res = await fetch(url, { cache: "no-store" })
+    const ct = res.headers.get("content-type") || ""
+    const buf = await res.arrayBuffer()
+
+    // 🔥 Диагностика: если пришел HTML, это видно сразу
+    if (ct.includes("text/html")) {
+        const text = new TextDecoder().decode(buf.slice(0, 200))
+        throw new Error(`Font URL returned HTML: ${url}\nContent-Type: ${ct}\nPreview: ${text}`)
+    }
+
+    const bytes = new Uint8Array(buf)
     let binary = ""
-    const bytes = new Uint8Array(buffer)
-    for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i])
+    const chunk = 0x8000
+    for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
     }
     return btoa(binary)
 }
 
-async function loadImageBase64(url: string): Promise<string | null> {
-    try {
-        const res = await fetch(url)
-        if (!res.ok) return null
-        const blob = await res.blob()
 
-        return await new Promise((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
-            reader.readAsDataURL(blob)
-        })
-    } catch {
-        return null
-    }
+
+async function loadImageBase64(url: string): Promise<string | null> {
+    const res = await fetch(url, { cache: "no-store" }) // ВАЖНО
+    if (!res.ok) return null
+    const blob = await res.blob()
+
+    return await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.readAsDataURL(blob)
+    })
 }
 
 export async function exportUsersToPdf(users: User[], columns: PdfColumnKey[]) {
     try {
-        const doc = new jsPDF()
+        // ❗ ВАЖНО: создаём jsPDF с явными параметрами
+        const doc = new jsPDF({
+            orientation: "p",
+            unit: "mm",
+            format: "a4",
+            putOnlyUsedFonts: true,   // 🔥 важно
+            compress: true,
+        })
         const base = import.meta.env.BASE_URL
 
-        // ⬇️ ПРАВИЛЬНАЯ загрузка шрифта
-        const fontBinary = await loadBinary(`${base}fonts/DejaVuSans.ttf`)
-        doc.addFileToVFS("DejaVuSans.ttf", fontBinary)
-        doc.addFont("DejaVuSans.ttf", "DejaVuSans", "normal")
-        doc.setFont("DejaVuSans", "normal")
+        // Шрифт
+        const fontUrl = new URL("../assets/fonts/Roboto-Regular.ttf", import.meta.url).toString()
+        const fontBinary = await loadBinary(fontUrl)
 
+        doc.addFileToVFS("Roboto-Regular.ttf", fontBinary)
+        doc.addFont("Roboto-Regular.ttf", "Roboto", "normal", "Identity-H")
+        doc.setFont("Roboto", "normal")
+
+        doc.setFontSize(12)
+
+        // Шапка
         const title = "Отчёт по пользователям"
-        const date = new Date().toLocaleDateString()
+        const date = new Date().toLocaleDateString("ru-RU")
 
         const logoBase64 = await loadImageBase64(`${base}logoAmir.png`)
         if (logoBase64) {
@@ -67,13 +86,20 @@ export async function exportUsersToPdf(users: User[], columns: PdfColumnKey[]) {
         doc.line(14, 32, 196, 32)
 
         const head = [columns.map(c => COLUMN_LABELS[c])]
+
+
+
         const body = users.map(u =>
             columns.map(c => {
                 switch (c) {
-                    case "name": return u.name
-                    case "email": return u.email
-                    case "phone": return u.phone
-                    case "company": return u.company.name
+                    case "name":
+                        return u.name
+                    case "email":
+                        return u.email
+                    case "phone":
+                        return u.phone
+                    case "company":
+                        return u.company.name
                 }
             })
         )
@@ -82,18 +108,9 @@ export async function exportUsersToPdf(users: User[], columns: PdfColumnKey[]) {
             startY: 38,
             head,
             body,
-            styles: {
-                font: "DejaVuSans",
-                fontSize: 9,
-                cellPadding: 3,
-            },
-            headStyles: {
-                fillColor: [99, 102, 241],
-                textColor: 255,
-                font: "DejaVuSans",
-            },
-            alternateRowStyles: { fillColor: [245, 247, 250] },
-            margin: { left: 14, right: 14 },
+            styles: { font: "Roboto", fontStyle: "normal" },
+            headStyles: { font: "Roboto", fontStyle: "normal" },
+            bodyStyles: { font: "Roboto", fontStyle: "normal" },
         })
 
         doc.save(`users-report-${new Date().toISOString().slice(0, 10)}.pdf`)
